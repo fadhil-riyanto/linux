@@ -514,15 +514,15 @@ struct io_cqring_offsets {
  * Passed in for io_uring_setup(2). Copied back with updated info on success
  */
 struct io_uring_params {
-	__u32 sq_entries;
-	__u32 cq_entries;
+	__u32 sq_entries; /* filled by kernel */
+	__u32 cq_entries; /* this field tell how big cq_ring */ 
 	__u32 flags;
 	__u32 sq_thread_cpu;
 	__u32 sq_thread_idle;
-	__u32 features;
+	__u32 features;  /* if this field filled with IORING_FEAT_SINGLE_MMAP, we can do second mmap() */ 
 	__u32 wq_fd;
 	__u32 resv[3];
-	struct io_sqring_offsets sq_off;
+	struct io_sqring_offsets sq_off; /* sq_off and cq_off are essential for setup offset */
 	struct io_cqring_offsets cq_off;
 };
 
