@@ -74,7 +74,7 @@ struct io_uring_sqe {
 		__u32		install_fd_flags;
 		__u32		nop_flags;
 	};
-	__u64	user_data;	/* data to be passed back at completion time */
+	__u64	user_data;	/* data to be passed back at completion time, not touched by kernel */
 	/* pack this to avoid bogus arm OABI complaints */
 	union {
 		/* index into fixed buffers, if used */
@@ -200,6 +200,7 @@ enum io_uring_sqe_flags_bit {
  */
 #define IORING_SETUP_NO_SQARRAY		(1U << 16)
 
+/* syscall op-code here */
 enum io_uring_op {
 	IORING_OP_NOP,
 	IORING_OP_READV,
@@ -450,6 +451,9 @@ struct io_uring_cqe {
 
 /*
  * Magic offsets for the application to mmap the data it needs
+ *
+ * additional: 
+ * IORING_OFF_SQ_RING used by MMAP(2) syscall while set memory on sq_ptr
  */
 #define IORING_OFF_SQ_RING		0ULL
 #define IORING_OFF_CQ_RING		0x8000000ULL
@@ -462,13 +466,13 @@ struct io_uring_cqe {
  * Filled with the offset for mmap(2)
  */
 struct io_sqring_offsets {
-	__u32 head;
-	__u32 tail;
-	__u32 ring_mask;
-	__u32 ring_entries;
-	__u32 flags;
-	__u32 dropped;
-	__u32 array;
+	__u32 head; /* offset of ring head */
+	__u32 tail; /* offset of ring tail */
+	__u32 ring_mask; /* ring mask value */
+	__u32 ring_entries; /* entries in ring */
+	__u32 flags; /* ring flags */
+	__u32 dropped; /* number of sqes not submitted */
+	__u32 array; /* sqe index array */
 	__u32 resv1;
 	__u64 user_addr;
 };
@@ -512,15 +516,15 @@ struct io_cqring_offsets {
  * Passed in for io_uring_setup(2). Copied back with updated info on success
  */
 struct io_uring_params {
-	__u32 sq_entries;
-	__u32 cq_entries;
+	__u32 sq_entries; /* filled by kernel */
+	__u32 cq_entries; /* this field tell how big cq_ring */ 
 	__u32 flags;
 	__u32 sq_thread_cpu;
 	__u32 sq_thread_idle;
-	__u32 features;
+	__u32 features;  /* if this field filled with IORING_FEAT_SINGLE_MMAP, we can do second mmap() */ 
 	__u32 wq_fd;
 	__u32 resv[3];
-	struct io_sqring_offsets sq_off;
+	struct io_sqring_offsets sq_off; /* sq_off and cq_off are essential for setup offset */
 	struct io_cqring_offsets cq_off;
 };
 
